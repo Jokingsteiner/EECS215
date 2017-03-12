@@ -94,6 +94,7 @@ public class Knapsack2D {
                 maxVolume += volume[i];
             }
         }
+        System.out.println("------------------------------");
         System.out.println("Total" + "\t" + maxValue + "\t\t" + maxWeight + "\t\t" + maxVolume);
     }
 
@@ -102,6 +103,9 @@ public class Knapsack2D {
         int value[] = {1, 6, 18, 22, 28};
         int weight[] = {1, 2, 5, 6, 7};
         int volume[] = {1, 10, 3, 2, 2};
+        assert(value.length == weight.length);
+        assert(value.length == volume.length);
+        assert(volume.length == weight.length);
 
         Knapsack2D ks1 = new Knapsack2D(value.length, 11, 15, value, weight, volume);
         ks1.printResult();

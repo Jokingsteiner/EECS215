@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by cjk98 on 3/12/2017.
  */
@@ -7,8 +10,9 @@ public class KnapsackRepetition {
     int W;
     int value[];
     int weight[];
-    boolean isTaken[][];
-    boolean finalDecision[];
+    // the node taken to build OPT for each w, for trace back convenience;
+    int takenNode[];
+    int opt[];
 
     public KnapsackRepetition(int n, int W, int[] value, int[] weight) {
         this.N = n;
@@ -24,46 +28,21 @@ public class KnapsackRepetition {
         for (int i = 0; i < weight.length; i++)
             this.weight[i + 1] = weight[i];
 
-        this.isTaken = new boolean[this.N + 1][this.W + 1];
-        this.finalDecision = new boolean[this.N + 1];
+        this.takenNode = new int[this.W + 1];
+        this.opt = new int[this.W + 1];
 
-        this.dpApproach();
-        this.traceBack();
+        dpApproach();
     }
 
     private void dpApproach() {
-        int opt[][] = new int[N + 1][W + 1];
-        // to record if a item is taken in a sub problem, convenient to trace back
-
-        for (int i = 1; i <= N; i++) {
-            for (int w = 1; w <= W; w++) {
-                // don't take item i
-                int prevOPT = opt[i - 1][w];
-
-                // take item i
-                int newOPT = Integer.MIN_VALUE;
-                if (weight[i] <= w)
-                    newOPT = value[i] + opt[i - 1][w - weight[i]];
-
-                // pick the option that can give maximum value in this sub problem
-                opt[i][w] = Math.max(prevOPT, newOPT);
-                if (newOPT > prevOPT)
-                    isTaken[i][w] = true;
-                else
-                    isTaken[i][w] = false;
-            }
-        }
-    }
-
-    private void traceBack() {
-        // trace back to see which item should be put in to the bag in final solution with W
-        for (int n = N, w = W; n > 0; n--) {
-            if (isTaken[n][w]) {
-                finalDecision[n] = true;
-                w = w - weight[n];
-            }
-            else {
-                finalDecision[n] = false;
+        for (int w = 1; w <= W; w++) {
+            for (int i = 1; i <= N; i++) {
+                if (weight[i] <= w) {
+                    if (opt[w - weight[i]] + value[i] > opt[w]) {
+                        takenNode[w] = i;
+                        opt[w] = opt[w - weight[i]] + value[i];
+                    }
+                }
             }
         }
     }
@@ -72,23 +51,63 @@ public class KnapsackRepetition {
         int maxValue = 0;
         int maxWeight = 0;
         System.out.println("item" + "\t" + "value" + "\t" + "weight");
-        for (int i = 1; i <= N; i++) {
-            if (finalDecision[i]) {
-                System.out.println(i + "\t\t" + value[i] + "\t\t" + weight[i]);
-                maxValue += value[i];
-                maxWeight += weight[i];
-            }
-        }
+        int w = W;
+        int node;
+        do {
+            node = takenNode[w];
+            System.out.println(node + "\t\t" + value[node] + "\t\t" + weight[node]);
+            maxValue += value[node];
+            maxWeight += weight[node];
+            w -= weight[node];
+        } while (takenNode[w] != 0);
+
+        System.out.println("----------------------");
         System.out.println("Total" + "\t" + maxValue + "\t\t" + maxWeight);
     }
 
+    public void printOPT () {
+        System.out.printf("weight\t");
+        for (int i = 0; i < W + 1; i++)
+            System.out.printf(i + "\t");
+        System.out.printf("\nvalue\t");
+        for (int i = 0; i < W + 1; i++)
+            System.out.printf(opt[i] + "\t");
+        System.out.println("");
+    }
+
+    public static List<String> getTokensFromString (String str, String splitRegEx) {
+        List<String> tokenList = new ArrayList<>();
+        String[] tokenOfLine = str.split(splitRegEx);
+        for (String s: tokenOfLine) {
+            if (s.length() != 0)
+                tokenList.add(s.toLowerCase());
+        }
+        return tokenList;
+    }
 
     public static void main(String[] args) {
-        int value[] = {1, 6, 18, 22, 28};
-        int weight[] = {1, 2, 5, 6, 7};
+        final int NUM_OF_INPUTS = 3;
+        for (int i = 1; i <= NUM_OF_INPUTS; i++) {
+            String filename = ".\\Knapsack\\inputs\\KP_input_" + i + ".txt";
+            FileReaderWBuffer fr = new FileReaderWBuffer(filename);
+            ArrayList<String> lines = fr.readAll();
+            fr.close();
 
-        KnapsackRepetition ks1 = new KnapsackRepetition(value.length, 11, value, weight);
-        ks1.printResult();
+            int weightLimit = Integer.valueOf(getTokensFromString(lines.get(0), "[\\D]+").get(0));
+            int value[] = new int[lines.size() - 1];
+            int weight[] = new int[lines.size() - 1];
+            List<String> tokens;
+            for (int j = 1; j < lines.size(); j++) {
+                tokens = getTokensFromString(lines.get(j), "[\\D]+");
+                weight[j - 1] = Integer.valueOf(tokens.get(1));
+                value[j - 1] = Integer.valueOf(tokens.get(2));
+            }
 
+            assert (value.length == weight.length);
+            KnapsackRepetition ks = new KnapsackRepetition(value.length, weightLimit, value, weight);
+            ks.printOPT();
+            ks.printResult();
+            System.out.println("");
+        }
     }
 }
